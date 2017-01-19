@@ -5,7 +5,7 @@ import json
 import requests
 from time import sleep
 from operator import itemgetter
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 
 ENRICHR_URL = 'http://amp.pharm.mssm.edu/Enrichr/'
@@ -33,13 +33,14 @@ def get_enrichr_results(gene_set_library, genelist, description):
     return json.loads(response.text)
 
 
-def parse_gmt(gmt):
+def parse_gmt(gmt, dir):
     tfs = defaultdict(list)
     for line in gmt:
         term, desc, *genes = line.strip().split('\t')
         genes = [gene.split(',')[0] for gene in genes]
-        tf = term.split(sep='_')[0]
-        tfs[tf].append(genes)
+        if term.split(sep='-')[1] == dir:
+            tf = term.split(sep='-')[0].upper()
+            tfs[tf].append(genes)
     return tfs
 
 
@@ -50,41 +51,58 @@ def map_tf(tf, res, ref):
     return ref
 
 
-def main():
-    library = 'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X'
-    gmt_file = 'ChEA_2016.gmt'
-    chea2016 = parse_gmt(open(gmt_file, 'r').readlines())
-
-    pval_hist = [0] * REF_SIZE
-    adj_pval_hist = [0] * REF_SIZE
-    old_pval_hist = [0] * REF_SIZE
-    old_adj_pval_hist = [0] * REF_SIZE
-
-    for key in chea2016.keys():
-        for genes in chea2016[key]:
-            data = get_enrichr_results(library, '\n'.join(genes), '')
-            results = []
-            for res in data[library]:
-                tf = res[1].split(sep='_')[0]
-                pval = res[2]
-                adj_pval = res[6]
-                old_pval = res[7]
-                old_adj_pval = res[8]
-                results.append([tf, pval, adj_pval, old_pval, old_adj_pval])
-
-            s_pval = [line[0] for line in sorted(results, key=itemgetter(1))]
-            pval_hist = map_tf(key, s_pval, pval_hist)
-
-            s_adj_pval = [line[0] for line in sorted(results, key=itemgetter(2))]
-            adj_pval_hist = map_tf(key, s_adj_pval, adj_pval_hist)
-
-            s_old_pval = [line[0] for line in sorted(results, key=itemgetter(3))]
-            old_pval_hist = map_tf(key, s_old_pval, old_pval_hist)
-
-            s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
-            old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
+def draw_hist_cmp(result1, result2, label1, label2, title):
+    plt.xlim(-5, 20)
+    # plt.ylim(0, 200)
+    plt.hist(result1, alpha=0.5, color='blue', bins=REF_SIZE, label=label1)
+    plt.hist(result2, alpha=0.5, color='green', bins=REF_SIZE, label=label2)
+    plt.xlabel('tf hits in library')
+    plt.title(title)
+    plt.xlabel('ranks')
+    plt.ylabel('matches')
+    plt.legend(loc='upper right')
+    plt.show()
     return None
 
+def main():
+    libraries = ['ChEA_2016', 'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X']
+    dirs = ['up', 'down']
+    gmt_file = 'single_gene_perturbations-v1.0.gmt'
+
+    for dir in dirs:
+        for library in libraries:
+            creeds = parse_gmt(open(gmt_file, 'r').readlines(), dir)
+            pval_hist = [0] * REF_SIZE
+            adj_pval_hist = [0] * REF_SIZE
+            old_pval_hist = [0] * REF_SIZE
+            old_adj_pval_hist = [0] * REF_SIZE
+
+            for key in list(creeds.keys()):
+                for genes in creeds[key]:
+                    data = get_enrichr_results(library, '\n'.join(genes), '')
+                    results = []
+                    for res in data[library]:
+                        tf = res[1].split(sep='_')[0]
+                        pval = res[2]
+                        adj_pval = res[6]
+                        old_pval = res[7]
+                        old_adj_pval = res[8]
+                        results.append([tf, pval, adj_pval, old_pval, old_adj_pval])
+
+                    s_pval = [line[0] for line in sorted(results, key=itemgetter(1))]
+                    pval_hist = map_tf(key, s_pval, pval_hist)
+
+                    s_adj_pval = [line[0] for line in sorted(results, key=itemgetter(2))]
+                    adj_pval_hist = map_tf(key, s_adj_pval, adj_pval_hist)
+
+                    s_old_pval = [line[0] for line in sorted(results, key=itemgetter(3))]
+                    old_pval_hist = map_tf(key, s_old_pval, old_pval_hist)
+
+                    s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
+                    old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
+            draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, dir))
+            draw_hist_cmp(adj_pval_hist, old_adj_pval_hist, 'adjusted p-value', 'old adjusted p-value', '%s %s' % (library, dir))
+    return None
 
 if __name__ == '__main__':
     main()
