@@ -5,8 +5,11 @@ import json
 import requests
 from time import sleep
 from operator import itemgetter
+# import matplotlib.pyplot as plt
+
 
 ENRICHR_URL = 'http://amp.pharm.mssm.edu/Enrichr/'
+REF_SIZE = 104
 
 
 def get_enrichr_results(gene_set_library, genelist, description):
@@ -40,10 +43,23 @@ def parse_gmt(gmt):
     return tfs
 
 
+def map_tf(tf, res, ref):
+    indices = [i for i, x in enumerate(res) if x == tf]
+    for index in indices:
+        ref[index] += 1
+    return ref
+
+
 def main():
     library = 'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X'
     gmt_file = 'ChEA_2016.gmt'
     chea2016 = parse_gmt(open(gmt_file, 'r').readlines())
+
+    pval_hist = [0] * REF_SIZE
+    adj_pval_hist = [0] * REF_SIZE
+    old_pval_hist = [0] * REF_SIZE
+    old_adj_pval_hist = [0] * REF_SIZE
+
     for key in chea2016.keys():
         for genes in chea2016[key]:
             data = get_enrichr_results(library, '\n'.join(genes), '')
@@ -55,11 +71,18 @@ def main():
                 old_pval = res[7]
                 old_adj_pval = res[8]
                 results.append([tf, pval, adj_pval, old_pval, old_adj_pval])
-            s_pval = sorted(results, key=itemgetter(1))
-            s_adj_pval = sorted(results, key=itemgetter(2))
-            s_old_pval = sorted(results, key=itemgetter(3))
-            s_old_adj_pval = sorted(results, key=itemgetter(4))
-            print()
+
+            s_pval = [line[0] for line in sorted(results, key=itemgetter(1))]
+            pval_hist = map_tf(key, s_pval, pval_hist)
+
+            s_adj_pval = [line[0] for line in sorted(results, key=itemgetter(2))]
+            adj_pval_hist = map_tf(key, s_adj_pval, adj_pval_hist)
+
+            s_old_pval = [line[0] for line in sorted(results, key=itemgetter(3))]
+            old_pval_hist = map_tf(key, s_old_pval, old_pval_hist)
+
+            s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
+            old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
     return None
 
 
