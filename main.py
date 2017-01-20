@@ -9,8 +9,6 @@ import matplotlib.pyplot as plt
 
 
 ENRICHR_URL = 'http://amp.pharm.mssm.edu/Enrichr/'
-REF_SIZE = 104
-
 
 def get_enrichr_results(gene_set_library, genelist, description):
     addlist_url = ENRICHR_URL + 'addList'
@@ -41,7 +39,7 @@ def parse_gmt(gmt, dir):
         if term.split(sep='-')[1] == dir:
             tf = term.split(sep='-')[0].upper()
             tfs[tf].append(genes)
-    return tfs
+    return tfs, len(gmt)
 
 
 def map_tf(tf, res, ref):
@@ -51,11 +49,11 @@ def map_tf(tf, res, ref):
     return ref
 
 
-def draw_hist_cmp(result1, result2, label1, label2, title):
+def draw_hist_cmp(result1, result2, label1, label2, title, ref_size):
     plt.xlim(-5, 20)
     # plt.ylim(0, 200)
-    plt.hist(result1, alpha=0.5, color='blue', bins=REF_SIZE, label=label1)
-    plt.hist(result2, alpha=0.5, color='green', bins=REF_SIZE, label=label2)
+    plt.hist(result1, alpha=0.5, color='blue', bins=ref_size, label=label1)
+    plt.hist(result2, alpha=0.5, color='green', bins=ref_size, label=label2)
     plt.xlabel('tf hits in library')
     plt.title(title)
     plt.xlabel('ranks')
@@ -64,21 +62,22 @@ def draw_hist_cmp(result1, result2, label1, label2, title):
     plt.show()
     return None
 
+
 def main():
-    libraries = ['ChEA_2016', 'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X']
-    dirs = ['up', 'down']
+    libraries = ['ChEA_2016'] #, 'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X']
+    dirs = ['up'] #, 'down']
     gmt_file = 'single_gene_perturbations-v1.0.gmt'
 
-    for dir in dirs:
+    for direction in dirs:
         for library in libraries:
-            creeds = parse_gmt(open(gmt_file, 'r').readlines(), dir)
-            pval_hist = [0] * REF_SIZE
-            adj_pval_hist = [0] * REF_SIZE
-            old_pval_hist = [0] * REF_SIZE
-            old_adj_pval_hist = [0] * REF_SIZE
+            reference, ref_size = parse_gmt(open(gmt_file, 'r').readlines(), direction)
+            pval_hist = [0] * ref_size
+            adj_pval_hist = [0] * ref_size
+            old_pval_hist = [0] * ref_size
+            old_adj_pval_hist = [0] * ref_size
 
-            for key in list(creeds.keys()):
-                for genes in creeds[key]:
+            for key in list(reference.keys())[:100]:
+                for genes in reference[key]:
                     data = get_enrichr_results(library, '\n'.join(genes), '')
                     results = []
                     for res in data[library]:
@@ -100,8 +99,8 @@ def main():
 
                     s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
                     old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
-            draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, dir))
-            draw_hist_cmp(adj_pval_hist, old_adj_pval_hist, 'adjusted p-value', 'old adjusted p-value', '%s %s' % (library, dir))
+            draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, direction), ref_size)
+            draw_hist_cmp(adj_pval_hist, old_adj_pval_hist, 'adjusted p-value', 'old adjusted p-value', '%s %s' % (library, direction), ref_size)
     return None
 
 if __name__ == '__main__':
