@@ -42,6 +42,19 @@ def parse_gmt(gmt, dir):
     return tfs, len(gmt)
 
 
+def filter_library(ref, lib):
+    lib_keys = set(line.split()[0].split(sep='_')[0] for line in lib)
+    filtered_keys = set(ref.keys()).intersection(lib_keys)
+    filtered_ref = []
+    for key in filtered_keys:
+        filtered_ref.append(ref[key])
+    return filtered_ref
+
+
+def pickle_queue():
+    return None
+
+
 def map_tf(tf, res, ref):
     indices = [i for i, x in enumerate(res) if x == tf]
     for index in indices:
@@ -71,12 +84,14 @@ def main():
     for direction in dirs:
         for library in libraries:
             reference, ref_size = parse_gmt(open(gmt_file, 'r').readlines(), direction)
+            lib_file = open('%s.gmt' % library, 'r').readlines()
+            reference = filter_library(reference, lib_file)
             pval_hist = [0] * ref_size
             adj_pval_hist = [0] * ref_size
             old_pval_hist = [0] * ref_size
             old_adj_pval_hist = [0] * ref_size
 
-            for key in list(reference.keys())[:100]:
+            for key in list(reference.keys()):
                 for genes in reference[key]:
                     data = get_enrichr_results(library, '\n'.join(genes), '')
                     results = []
