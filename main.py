@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 ENRICHR_URL = 'http://amp.pharm.mssm.edu/Enrichr/'
 
+
 def get_enrichr_results(gene_set_library, genelist, description):
     addlist_url = ENRICHR_URL + 'addList'
     payload = {
@@ -45,9 +46,9 @@ def parse_gmt(gmt, dir):
 def filter_library(ref, lib):
     lib_keys = set(line.split()[0].split(sep='_')[0] for line in lib)
     filtered_keys = set(ref.keys()).intersection(lib_keys)
-    filtered_ref = []
+    filtered_ref = dict()
     for key in filtered_keys:
-        filtered_ref.append(ref[key])
+        filtered_ref[key] = ref[key]
     return filtered_ref
 
 
