@@ -24,14 +24,14 @@ def get_enrichr_results(gene_set_library, genelist, description):
     response = requests.post(addlist_url, files=payload)
     if not response.ok:
         raise Exception('Error analyzing gene list')
-    sleep(1)
+    # sleep(1)
     data = json.loads(response.text)
 
     enrich_url = ENRICHR_URL + '/enrich'
     query_string = '?userListId=%s&backgroundType=%s'
     user_list_id = data['userListId']
     response = requests.get(enrich_url + query_string % (user_list_id, gene_set_library))
-    sleep(1)
+    # sleep(1)
     return json.loads(response.text)
 
 
@@ -49,10 +49,10 @@ def parse_gmt(gmt, dir):
 def filter_library(ref, lib):
     lib_keys = set(line.split()[0].split(sep='_')[0] for line in lib)
     filtered_keys = set(ref.keys()).intersection(lib_keys)
-    filtered_ref = dict()
-    for key in filtered_keys:
-        filtered_ref[key] = ref[key]
-    return filtered_ref
+    filtered_ref = []
+    for key in sorted(filtered_keys):
+        filtered_ref.extend([[key, ref[key][pos]] for pos in range(len(ref[key]))])
+    return sorted(filtered_ref)
 
 
 def map_tf(tf, res, ref):
@@ -63,10 +63,10 @@ def map_tf(tf, res, ref):
 
 
 def draw_hist_cmp(result1, result2, label1, label2, title, ref_size):
-    plt.xlim(-5, 20)
-    # plt.ylim(0, 200)
-    plt.hist(result1, alpha=0.5, color='blue', bins=ref_size, label=label1)
-    plt.hist(result2, alpha=0.5, color='green', bins=ref_size, label=label2)
+    plt.xlim(-1, 50)
+    plt.ylim(0, 50)
+    plt.hist(result1, alpha=0.5, color='blue', label=label1, histtype='bar')
+    plt.hist(result2, alpha=0.5, color='green', label=label2, histtype='bar')
     plt.xlabel('tf hits in library')
     plt.title(title)
     plt.xlabel('ranks')
@@ -91,34 +91,32 @@ def main():
             adj_pval_hist = [0] * lib_size
             old_pval_hist = [0] * lib_size
             old_adj_pval_hist = [0] * lib_size
-            results = []
-            for pos, key in enumerate(list(reference.keys())):
-                print(pos, len(reference[key]), len(list(reference.keys())))
-                for genes in reference[key]:
-                    data = get_enrichr_results(library, '\n'.join(genes), '')
+            for pos, line in enumerate(reference[:10]):
+                key, genes = line
+                print(pos)
+                results = []
+                data = get_enrichr_results(library, '\n'.join(genes), '')
+                for res in data[library]:
+                    tf = res[1].split(sep='_')[0]
+                    pval = res[2]
+                    adj_pval = res[6]
+                    old_pval = res[7]
+                    old_adj_pval = res[8]
+                    results.append([tf, pval, adj_pval, old_pval, old_adj_pval])
+                s_pval = [line[0] for line in sorted(results, key=itemgetter(1))]
+                pval_hist = map_tf(key, s_pval, pval_hist)
 
-                    for res in data[library]:
-                        tf = res[1].split(sep='_')[0]
-                        pval = res[2]
-                        adj_pval = res[6]
-                        old_pval = res[7]
-                        old_adj_pval = res[8]
-                        results.append([tf, pval, adj_pval, old_pval, old_adj_pval])
+                s_adj_pval = [line[0] for line in sorted(results, key=itemgetter(2))]
+                adj_pval_hist = map_tf(key, s_adj_pval, adj_pval_hist)
 
-                    s_pval = [line[0] for line in sorted(results, key=itemgetter(1))]
-                    pval_hist = map_tf(key, s_pval, pval_hist)
+                s_old_pval = [line[0] for line in sorted(results, key=itemgetter(3))]
+                old_pval_hist = map_tf(key, s_old_pval, old_pval_hist)
 
-                    s_adj_pval = [line[0] for line in sorted(results, key=itemgetter(2))]
-                    adj_pval_hist = map_tf(key, s_adj_pval, adj_pval_hist)
+                s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
+                old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
 
-                    s_old_pval = [line[0] for line in sorted(results, key=itemgetter(3))]
-                    old_pval_hist = map_tf(key, s_old_pval, old_pval_hist)
-
-                    s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
-                    old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
-
-            draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, direction), ref_size)
-            draw_hist_cmp(adj_pval_hist, old_adj_pval_hist, 'adjusted p-value', 'old adjusted p-value', '%s %s' % (library, direction), ref_size)
+            draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, direction), lib_size)
+            draw_hist_cmp(adj_pval_hist, old_adj_pval_hist, 'adjusted p-value', 'old adjusted p-value', '%s %s' % (library, direction), lib_size)
     return None
 
 if __name__ == '__main__':
