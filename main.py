@@ -122,7 +122,8 @@ def main():
 
                 s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
                 old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
-                status = [start_pos, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist]
+
+                status = [start_pos + pos, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist]
                 pickle.dump(status, open('%s_%s.pickle' % (library, direction), 'wb'))
 
             draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, direction), lib_size)
