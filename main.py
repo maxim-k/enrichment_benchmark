@@ -101,7 +101,7 @@ def main():
 
             for pos, line in enumerate(reference[start_pos:]):
                 key, genes = line
-                print(pos)
+                print(pos+start_pos)
                 results = []
                 data = get_enrichr_results(library, '\n'.join(genes), '')
                 for res in data[library]:
