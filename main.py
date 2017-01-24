@@ -3,6 +3,7 @@ __author__ = 'maximkuleshov'
 from collections import defaultdict
 import json
 import requests
+import os.path
 import pickle
 from retrying import retry
 from time import sleep
@@ -77,7 +78,7 @@ def draw_hist_cmp(result1, result2, label1, label2, title, ref_size):
 
 
 def main():
-    libraries = [['ChEA_2016', 645]] #, 'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X']
+    libraries = [['ChEA_2016', 645]] #, ['ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X', 104]]
     dirs = ['up'] #, 'down']
     gmt_file = 'single_gene_perturbations-v1.0.gmt'
 
@@ -87,11 +88,18 @@ def main():
             reference = parse_gmt(open(gmt_file, 'r').readlines(), direction)
             lib_file = open('%s.gmt' % library, 'r').readlines()
             reference = filter_library(reference, lib_file)
-            pval_hist = [0] * lib_size
-            adj_pval_hist = [0] * lib_size
-            old_pval_hist = [0] * lib_size
-            old_adj_pval_hist = [0] * lib_size
-            for pos, line in enumerate(reference[:10]):
+
+            if os.path.isfile('%s_%s.pickle' % (library, direction)):
+                jar = pickle.load(open('%s_%s.pickle' % (library, direction), 'rb'))
+                start_pos, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist = jar
+            else:
+                start_pos = 0
+                pval_hist = [0] * lib_size
+                adj_pval_hist = [0] * lib_size
+                old_pval_hist = [0] * lib_size
+                old_adj_pval_hist = [0] * lib_size
+
+            for pos, line in enumerate(reference[start_pos:]):
                 key, genes = line
                 print(pos)
                 results = []
@@ -114,6 +122,8 @@ def main():
 
                 s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
                 old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
+                status = [start_pos, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist]
+                pickle.dump(status, open('%s_%s.pickle' % (library, direction), 'wb'))
 
             draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, direction), lib_size)
             draw_hist_cmp(adj_pval_hist, old_adj_pval_hist, 'adjusted p-value', 'old adjusted p-value', '%s %s' % (library, direction), lib_size)
