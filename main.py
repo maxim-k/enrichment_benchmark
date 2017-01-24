@@ -3,6 +3,8 @@ __author__ = 'maximkuleshov'
 from collections import defaultdict
 import json
 import requests
+import pickle
+from retrying import retry
 from time import sleep
 from operator import itemgetter
 import matplotlib.pyplot as plt
@@ -11,6 +13,7 @@ import matplotlib.pyplot as plt
 ENRICHR_URL = 'http://amp.pharm.mssm.edu/Enrichr/'
 
 
+@retry
 def get_enrichr_results(gene_set_library, genelist, description):
     addlist_url = ENRICHR_URL + 'addList'
     payload = {
@@ -40,7 +43,7 @@ def parse_gmt(gmt, dir):
         if term.split(sep='-')[1] == dir:
             tf = term.split(sep='-')[0].upper()
             tfs[tf].append(genes)
-    return tfs, len(gmt)
+    return tfs
 
 
 def filter_library(ref, lib):
@@ -50,10 +53,6 @@ def filter_library(ref, lib):
     for key in filtered_keys:
         filtered_ref[key] = ref[key]
     return filtered_ref
-
-
-def pickle_queue():
-    return None
 
 
 def map_tf(tf, res, ref):
@@ -78,24 +77,26 @@ def draw_hist_cmp(result1, result2, label1, label2, title, ref_size):
 
 
 def main():
-    libraries = ['ChEA_2016'] #, 'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X']
+    libraries = [['ChEA_2016', 645]] #, 'ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X']
     dirs = ['up'] #, 'down']
     gmt_file = 'single_gene_perturbations-v1.0.gmt'
 
     for direction in dirs:
-        for library in libraries:
-            reference, ref_size = parse_gmt(open(gmt_file, 'r').readlines(), direction)
+        for lib_data in libraries:
+            library, lib_size = lib_data
+            reference = parse_gmt(open(gmt_file, 'r').readlines(), direction)
             lib_file = open('%s.gmt' % library, 'r').readlines()
             reference = filter_library(reference, lib_file)
-            pval_hist = [0] * ref_size
-            adj_pval_hist = [0] * ref_size
-            old_pval_hist = [0] * ref_size
-            old_adj_pval_hist = [0] * ref_size
-
-            for key in list(reference.keys()):
+            pval_hist = [0] * lib_size
+            adj_pval_hist = [0] * lib_size
+            old_pval_hist = [0] * lib_size
+            old_adj_pval_hist = [0] * lib_size
+            results = []
+            for pos, key in enumerate(list(reference.keys())):
+                print(pos, len(reference[key]), len(list(reference.keys())))
                 for genes in reference[key]:
                     data = get_enrichr_results(library, '\n'.join(genes), '')
-                    results = []
+
                     for res in data[library]:
                         tf = res[1].split(sep='_')[0]
                         pval = res[2]
@@ -115,6 +116,7 @@ def main():
 
                     s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
                     old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
+
             draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, direction), ref_size)
             draw_hist_cmp(adj_pval_hist, old_adj_pval_hist, 'adjusted p-value', 'old adjusted p-value', '%s %s' % (library, direction), ref_size)
     return None
