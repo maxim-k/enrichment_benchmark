@@ -64,10 +64,10 @@ def map_tf(tf, res, ref):
 
 
 def draw_hist_cmp(result1, result2, label1, label2, title, ref_size):
-    plt.xlim(-1, 50)
-    plt.ylim(0, 50)
-    plt.hist(result1, alpha=0.5, color='blue', label=label1, histtype='bar')
-    plt.hist(result2, alpha=0.5, color='green', label=label2, histtype='bar')
+    # plt.xlim(-1, 50)
+    # plt.ylim(0, 50)
+    plt.hist(result1, alpha=0.5, color='blue', label=label1)
+    plt.hist(result2, alpha=0.5, color='green', label=label2)
     plt.xlabel('tf hits in library')
     plt.title(title)
     plt.xlabel('ranks')
