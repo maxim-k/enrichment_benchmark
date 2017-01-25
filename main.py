@@ -36,12 +36,12 @@ def get_enrichr_results(gene_set_library, genelist, description):
     return json.loads(response.text)
 
 
-def parse_gmt(gmt, dir):
+def parse_gmt(gmt, direction):
     tfs = defaultdict(list)
     for line in gmt:
         term, desc, *genes = line.strip().split('\t')
         genes = [gene.split(',')[0] for gene in genes]
-        if term.split(sep='-')[1] == dir:
+        if term.split(sep='-')[1] == direction:
             tf = term.split(sep='-')[0].upper()
             tfs[tf].append(genes)
     return tfs
@@ -63,13 +63,10 @@ def map_tf(tf, res, ref):
     return ref
 
 
-def draw_hist_cmp(result1, result2, label1, label2, title, ref_size):
-    # plt.xlim(-1, 50)
-    # plt.ylim(0, 50)
-    plt.hist(result1, alpha=0.5, color='blue', label=label1)
-    plt.hist(result2, alpha=0.5, color='green', label=label2)
-    plt.xlabel('tf hits in library')
-    plt.title(title)
+def draw_hist_cmp(result1, result2, label1, label2, title):
+    plt.plot(result1, alpha=0.5, color='blue', label=label1)
+    plt.plot(result2, alpha=0.5, color='green', label=label2)
+    plt.title(title.replace('_', ' '))
     plt.xlabel('ranks')
     plt.ylabel('matches')
     plt.legend(loc='upper right')
@@ -103,7 +100,6 @@ def main():
                 key, genes = line
                 if not genes:
                     continue
-                print(pos+start_pos)
                 results = []
                 data = get_enrichr_results(library, '\n'.join(genes), '')
                 for res in data[library]:
@@ -125,11 +121,11 @@ def main():
                 s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
                 old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
 
-                status = [start_pos + pos, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist]
+                status = [start_pos + pos + 1, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist]
                 pickle.dump(status, open('%s_%s.pickle' % (library, direction), 'wb'))
 
-            draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, direction), lib_size)
-            draw_hist_cmp(adj_pval_hist, old_adj_pval_hist, 'adjusted p-value', 'old adjusted p-value', '%s %s' % (library, direction), lib_size)
+            draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, direction))
+            draw_hist_cmp(adj_pval_hist, old_adj_pval_hist, 'adjusted p-value', 'old adjusted p-value', '%s %s' % (library, direction))
     return None
 
 if __name__ == '__main__':
