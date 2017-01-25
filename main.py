@@ -79,7 +79,7 @@ def draw_hist_cmp(result1, result2, label1, label2, title, ref_size):
 
 def main():
     libraries = [['ChEA_2016', 645], ['ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X', 104]]
-    dirs = ['up', 'down']
+    dirs = ['up', 'dn']
     gmt_file = 'single_gene_perturbations-v1.0.gmt'
 
     for direction in dirs:
