@@ -6,9 +6,8 @@ import requests
 import os.path
 import pickle
 from retrying import retry
-from time import sleep
 from operator import itemgetter
-import matplotlib.pyplot as plt
+
 
 
 ENRICHR_URL = 'http://amp.pharm.mssm.edu/Enrichr/'
@@ -63,17 +62,6 @@ def map_tf(tf, res, ref):
     return ref
 
 
-def draw_hist_cmp(result1, result2, label1, label2, title):
-    plt.plot(result1, alpha=0.5, color='blue', label=label1)
-    plt.plot(result2, alpha=0.5, color='green', label=label2)
-    plt.title(title.replace('_', ' '))
-    plt.xlabel('ranks')
-    plt.ylabel('matches')
-    plt.legend(loc='upper right')
-    plt.show()
-    return None
-
-
 def main():
     libraries = [['ChEA_2016', 645], ['ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X', 104]]
     dirs = ['up', 'dn']
@@ -123,9 +111,6 @@ def main():
 
                 status = [start_pos + pos + 1, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist]
                 pickle.dump(status, open('%s_%s.pickle' % (library, direction), 'wb'))
-
-            draw_hist_cmp(pval_hist, old_pval_hist, 'p-value', 'old p-value', '%s %s' % (library, direction))
-            draw_hist_cmp(adj_pval_hist, old_adj_pval_hist, 'adjusted p-value', 'old adjusted p-value', '%s %s' % (library, direction))
     return None
 
 if __name__ == '__main__':
