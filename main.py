@@ -74,15 +74,15 @@ def main():
             lib_file = open('%s.gmt' % library, 'r').readlines()
             reference = filter_library(reference, lib_file)
 
-            if os.path.isfile('%s_%s.pickle' % (library, direction)):
-                jar = pickle.load(open('%s_%s.pickle' % (library, direction), 'rb'))
-                start_pos, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist = jar
-            else:
-                start_pos = 0
-                pval_hist = [0] * lib_size
-                adj_pval_hist = [0] * lib_size
-                old_pval_hist = [0] * lib_size
-                old_adj_pval_hist = [0] * lib_size
+            # if os.path.isfile('%s_%s.pickle' % (library, direction)):
+            #     jar = pickle.load(open('%s_%s.pickle' % (library, direction), 'rb'))
+            #     start_pos, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist = jar
+            # else:
+            start_pos = 0
+            pval_hist = [0] * lib_size
+            adj_pval_hist = [0] * lib_size
+            old_pval_hist = [0] * lib_size
+            old_adj_pval_hist = [0] * lib_size
 
             for pos, line in enumerate(reference[start_pos:]):
                 key, genes = line
