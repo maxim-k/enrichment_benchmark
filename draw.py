@@ -40,10 +40,10 @@ def draw_hist_cmp(pv, opv, apv, aopv):
     f, axes = plt.subplots(2, 2, figsize=(7, 7))
 
     # Plot a simple histogram with binsize determined automatically
-    sns.distplot(histify(pv), color="b", ax=axes[0, 0], bins=129, axlabel='p-value')
-    sns.distplot(histify(apv), color="b", ax=axes[0, 1], bins=129, axlabel='adjusted p-value')
-    sns.distplot(histify(opv), color="g", ax=axes[1, 0], bins=129, axlabel='old p-value')
-    sns.distplot(histify(aopv), color="g", ax=axes[1, 1], bins=129, axlabel='old adjusted p-value')
+    sns.distplot(histify(pv), color="b", ax=axes[0, 0], bins=20, axlabel='p-value')
+    sns.distplot(histify(apv), color="b", ax=axes[0, 1], bins=20, axlabel='adjusted p-value')
+    sns.distplot(histify(opv), color="g", ax=axes[1, 0], bins=20, axlabel='old p-value')
+    sns.distplot(histify(aopv), color="g", ax=axes[1, 1], bins=20, axlabel='old adjusted p-value')
 
     plt.setp(axes, yticks=[])
     # plt.hist(histify(pv), bins=65)

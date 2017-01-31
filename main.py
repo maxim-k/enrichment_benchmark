@@ -75,8 +75,8 @@ def main():
             lib_file = open('%s.gmt' % library, 'r').readlines()
             reference = filter_library(reference, lib_file)
 
-            if os.path.isfile('%s_%s.pickle' % (library, direction)):
-                jar = pickle.load(open('%s_%s.pickle' % (library, direction), 'rb'))
+            if os.path.isfile('%s_%s_pval.05.pickle' % (library, direction)):
+                jar = pickle.load(open('%s_%s_pval.05.pickle' % (library, direction), 'rb'))
                 start_pos, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist = jar
             else:
                 start_pos = 0
@@ -99,20 +99,20 @@ def main():
                     old_pval = res[7]
                     old_adj_pval = res[8]
                     results.append([tf, pval, adj_pval, old_pval, old_adj_pval])
-                s_pval = [line[0] for line in sorted(results, key=itemgetter(1))]
+                s_pval = [line[0] for line in sorted(results, key=itemgetter(1)) if line[1] <= 0.05]
                 pval_hist = map_tf(key, s_pval, pval_hist)
 
-                s_adj_pval = [line[0] for line in sorted(results, key=itemgetter(2))]
+                s_adj_pval = [line[0] for line in sorted(results, key=itemgetter(2)) if line[1] <= 0.05]
                 adj_pval_hist = map_tf(key, s_adj_pval, adj_pval_hist)
 
-                s_old_pval = [line[0] for line in sorted(results, key=itemgetter(3))]
+                s_old_pval = [line[0] for line in sorted(results, key=itemgetter(3)) if line[3] <= 0.05]
                 old_pval_hist = map_tf(key, s_old_pval, old_pval_hist)
 
-                s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4))]
+                s_old_adj_pval = [line[0] for line in sorted(results, key=itemgetter(4)) if line[3] <= 0.05]
                 old_adj_pval_hist = map_tf(key, s_old_adj_pval, old_adj_pval_hist)
 
                 status = [start_pos + pos + 1, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist]
-                pickle.dump(status, open('%s_%s.pickle' % (library, direction), 'wb'))
+                pickle.dump(status, open('%s_%s_pval.05.pickle' % (library, direction), 'wb'))
     return None
 
 if __name__ == '__main__':
