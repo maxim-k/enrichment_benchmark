@@ -30,19 +30,23 @@ def histify(res):
 
 
 def draw_hist_cmp(pv, opv, apv, aopv):
-    bins = binify(pv, 10)
-    ind = range(len(bins))  # the x locations for the groups
-    width = 5  # the width of the bars
-    # plt.xticks(bins + width / 2)
-    plt.bar(bins['label'], bins['sum'], width)
+    # bins = binify(pv, 10)
+    # ind = range(len(bins))  # the x locations for the groups
+    # width = 5  # the width of the bars
+    # # plt.xticks(bins + width / 2)
+    # plt.bar(bins['label'], bins['sum'], width)
 
     sns.set(style="white", palette="muted", color_codes=True)
     f, axes = plt.subplots(2, 2, figsize=(7, 7))
 
     # Plot a simple histogram with binsize determined automatically
-    sns.distplot(histify(pv), color="b", ax=axes[0, 0], bins=65, axlabel='p-value')
+    sns.distplot(histify(pv), color="b", ax=axes[0, 0], bins=129, axlabel='p-value')
+    sns.distplot(histify(apv), color="b", ax=axes[0, 1], bins=129, axlabel='adjusted p-value')
+    sns.distplot(histify(opv), color="g", ax=axes[1, 0], bins=129, axlabel='old p-value')
+    sns.distplot(histify(aopv), color="g", ax=axes[1, 1], bins=129, axlabel='old adjusted p-value')
+
     plt.setp(axes, yticks=[])
-    plt.hist(histify(pv), bins=65)
+    # plt.hist(histify(pv), bins=65)
     plt.tight_layout()
     sns.despine(left=True)
     plt.show()
