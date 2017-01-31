@@ -5,6 +5,7 @@ import json
 import requests
 import os.path
 import pickle
+from time import sleep
 from retrying import retry
 from operator import itemgetter
 
@@ -24,14 +25,14 @@ def get_enrichr_results(gene_set_library, genelist, description):
     response = requests.post(addlist_url, files=payload)
     if not response.ok:
         raise Exception('Error analyzing gene list')
-    # sleep(1)
+    sleep(1)
     data = json.loads(response.text)
 
     enrich_url = ENRICHR_URL + '/enrich'
     query_string = '?userListId=%s&backgroundType=%s'
     user_list_id = data['userListId']
     response = requests.get(enrich_url + query_string % (user_list_id, gene_set_library))
-    # sleep(1)
+    sleep(1)
     return json.loads(response.text)
 
 
@@ -74,17 +75,18 @@ def main():
             lib_file = open('%s.gmt' % library, 'r').readlines()
             reference = filter_library(reference, lib_file)
 
-            # if os.path.isfile('%s_%s.pickle' % (library, direction)):
-            #     jar = pickle.load(open('%s_%s.pickle' % (library, direction), 'rb'))
-            #     start_pos, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist = jar
-            # else:
-            start_pos = 0
-            pval_hist = [0] * lib_size
-            adj_pval_hist = [0] * lib_size
-            old_pval_hist = [0] * lib_size
-            old_adj_pval_hist = [0] * lib_size
+            if os.path.isfile('%s_%s.pickle' % (library, direction)):
+                jar = pickle.load(open('%s_%s.pickle' % (library, direction), 'rb'))
+                start_pos, pval_hist, adj_pval_hist, old_pval_hist, old_adj_pval_hist = jar
+            else:
+                start_pos = 0
+                pval_hist = [0] * lib_size
+                adj_pval_hist = [0] * lib_size
+                old_pval_hist = [0] * lib_size
+                old_adj_pval_hist = [0] * lib_size
 
             for pos, line in enumerate(reference[start_pos:]):
+                print(start_pos + pos)
                 key, genes = line
                 if not genes:
                     continue
